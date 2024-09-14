@@ -1,0 +1,450 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+body {
+  color: #333;
+  /* ... other existing styles ... */
+}
+
+.App h1 {
+  color: white; /* or any other color that contrasts well with the black background */
+  margin-bottom: 20px;
+}
+
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.App {
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.controls-section {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-section, .options-section, .action-buttons, .barcode-entries {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.input-section h2, .options-section h2, .barcode-entries h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.input-section input, .input-section select, .input-section button,
+.options-section input, .options-section select,
+.action-buttons button {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.range-inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.range-inputs input {
+  width: calc(50% - 5px);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.action-buttons button {
+  flex: 1;
+}
+
+.clear-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.clear-button:hover {
+  background-color: #d32f2f;
+}
+
+.barcode-entries {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  width: 100%;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes flash {
+  0% { background-color: #ffff99; }
+  100% { background-color: transparent; }
+}
+
+.barcode-entries tr:last-child {
+  animation: flash 1s;
+}
+
+.barcode-entries h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  position: sticky;
+  top: 0;
+  background-color: #f5f5f5;
+  z-index: 1;
+}
+
+.barcode-entries table {
+  width: 100%;
+  border-collapse: collapse;
+  flex-grow: 1;
+}
+
+.barcode-entries th,
+.barcode-entries td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.barcode-entries th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.barcode-entries tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.barcode-entries tr:hover {
+  background-color: #f5f5f5;
+}
+
+.barcode-entries td:first-child,
+.barcode-entries th:first-child {
+  width: 40px;
+}
+
+.barcode-entries td:last-child,
+.barcode-entries th:last-child {
+  width: 60px;
+  text-align: center;
+}
+
+.barcode-entries li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  padding: 5px;
+  background-color: white;
+  border-radius: 4px;
+  color: #333; /* Add this line to set the text color */
+}
+
+.barcode-entries li span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 10px;
+}
+
+.controls-section .delete-entry {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  background-color: transparent;
+  color: #f44336;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.controls-section .delete-entry:hover {
+  background-color: #f44336;
+  color: white;
+}
+
+.preview-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  background-color: #f0f0f0; /* Light gray background */
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.preview-section h2 {
+  color: #333; /* Dark gray text color */
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
+.preview-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow: auto;
+  max-height: 600px;
+  width: 100%;
+  max-width: 800px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.print-area {
+  display: inline-block; /* Changed from flex */
+}
+
+.barcode-row {
+  display: flex;
+  justify-content: flex-start;
+  page-break-after: always;
+}
+
+.barcode-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 2mm;
+  overflow: hidden;
+  background-color: white;
+  border: 1px solid #ccc;
+}
+
+.barcode-item img {
+  width: 100%;
+  height: auto; /* Changed from fixed height to auto */
+  object-fit: contain;
+  margin-bottom: 1mm;
+}
+
+.barcode-text {
+  font-size: 8px;
+  line-height: 1;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1mm;
+}
+
+.additional-text {
+  font-size: 6px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+  margin-top: 0.5mm;
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  .App {
+    max-width: none;
+  }
+
+  .controls-section, h1, h2 {
+    display: none;
+  }
+
+  .preview-section {
+    width: auto;
+  }
+
+  .preview-container {
+    border: none;
+    padding: 0;
+    overflow: visible;
+    max-height: none;
+    width: 100%;
+    max-width: none;
+  }
+
+  .print-area {
+    transform: none !important;
+  }
+
+  .barcode-row {
+    page-break-after: always;
+  }
+
+  .barcode-item {
+    border: none;
+  }
+}
+
+/* Ensure the entries section is always visible */
+.controls-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-section, .options-section, .action-buttons {
+  flex-shrink: 0;
+}
+
+.barcode-entries {
+  flex-grow: 1;
+  min-height: 100px; /* Adjust as needed */
+}
+
+@keyframes highlightNew {
+  0% { background-color: #ffff99; }
+  100% { background-color: transparent; }
+}
+
+.barcode-entries .new-entry {
+  animation: highlightNew 2s ease-in-out;
+}
+
+.options-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkbox-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.checkbox-label span {
+  font-size: 14px;
+}
+
+.options-section select {
+  width: 100%;
+}
+
+.controls-section .options-section .checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.custom-size-inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.custom-size-inputs input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.print-button {
+  background-color: #4CAF50;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.print-button:hover {
+  background-color: #45a049;
+}
+
