@@ -281,47 +281,23 @@ function App() {
               alignItems: 'center',
               border: '1px solid #ccc',
               boxSizing: 'border-box',
-              margin: '1px', // Add margin to separate items
-              backgroundColor: '#fff', // Light background for items
-              position: 'relative', // Add this for absolute positioning of children
+              margin: '1px',
+              backgroundColor: '#fff',
             }}
           >
             {barcode.image && (
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)', // Center the image container
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <img 
-                  src={barcode.image} 
-                  alt={`Barcode ${rowIndex * columns + index + 1}`} 
-                  style={{
-                    maxWidth: '95%', // Slightly reduced to ensure it doesn't touch the borders
-                    maxHeight: '95%',
-                    objectFit: 'contain'
-                  }}
-                />
-              </div>
+              <img 
+                src={barcode.image} 
+                alt={`Barcode ${rowIndex * columns + index + 1}`} 
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '85%',
+                  objectFit: 'contain'
+                }}
+              />
             )}
             {showExtraInfo && barcode.text && (
-              <div className="additional-text" style={{
-                position: 'absolute',
-                bottom: '5px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '90%',
-                textAlign: 'center',
-                fontSize: '10px',
-                wordBreak: 'break-word',
-              }}>
-                {barcode.text}
-              </div>
+              <div className="additional-text">{barcode.text}</div>
             )}
           </div>
         ))}
@@ -570,7 +546,12 @@ function App() {
         )}
       </main>
 
-      <footer>
+      <footer style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#fff',
+        padding: '10px',
+        textAlign: 'center'
+      }}>
         Created by <a 
           href="https://www.linkedin.com/in/im-suhail-akhtar/" 
           target="_blank" 
@@ -599,7 +580,6 @@ function App() {
                   pageBreakAfter: index < barcodes.length - 1 ? 'always' : 'auto'
                 }}
               >
-                <div className="debug-info">Barcode {index + 1}</div>
                 <img 
                   src={barcode.image} 
                   alt={`Barcode ${index + 1}`} 
