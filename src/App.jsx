@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import { useReactToPrint } from 'react-to-print';
 import { FaPrint } from 'react-icons/fa';
 import Darkmode from 'darkmode-js';
+import { Helmet } from 'react-helmet';
 import './App.css';
 
 const labelSizes = {
@@ -345,6 +346,19 @@ function App() {
 
   return (
     <div className="App">
+      <Helmet>
+        <title>Barcode Generator | Create Custom Barcodes Online</title>
+        <meta name="description" content="Generate custom barcodes online with our easy-to-use Barcode Generator. Create individual barcodes, barcode ranges, or upload CSV files for bulk generation." />
+        <meta name="keywords" content="barcode generator, custom barcodes, online barcode creator, QR code generator" />
+        <meta name="author" content="Suhail Akhtar" />
+        <meta property="og:title" content="Barcode Generator | Create Custom Barcodes Online" />
+        <meta property="og:description" content="Generate custom barcodes online with our easy-to-use Barcode Generator. Create individual barcodes, barcode ranges, or upload CSV files for bulk generation." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://your-app-url.com" />
+        <meta property="og:image" content="https://your-app-url.com/path-to-your-logo.png" />
+        <link rel="canonical" href="https://your-app-url.com" />
+      </Helmet>
+
       <header className="App-header">
         <h1 className="app-title">
           Barcode Generator 📊
