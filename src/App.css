@@ -474,5 +474,9 @@ body.printing .print-item {
   left: 2px;
 }
 
+footer {
+  margin-top: 30px;
+}
+
 /* ... existing CSS */
 
