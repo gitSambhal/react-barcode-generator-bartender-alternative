@@ -241,123 +241,128 @@ body {
 
 .preview-section {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
-  background-color: #f0f0f0; /* Light gray background */
-  padding: 20px;
-  border-radius: 8px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.preview-section h2 {
-  color: #333; /* Dark gray text color */
-  margin-bottom: 15px;
-  font-size: 1.5em;
+.preview-outer-container {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #ccc;
 }
 
 .preview-container {
-  border: 1px solid #ccc;
-  padding: 10px;
-  overflow: auto;
-  max-height: 600px;
-  width: 100%;
-  max-width: 800px;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.print-area {
-  display: inline-block; /* Changed from flex */
-}
-
-.barcode-row {
   display: flex;
-  justify-content: flex-start;
-  page-break-after: always;
+  flex-direction: column; /* Stack rows vertically */
+  width: 100%; /* Full width */
+  border: 1px solid #ccc;
+  background-color: #f9f9f9; /* Light background for the preview container */
 }
 
-.barcode-item {
+.preview-item {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-sizing: border-box;
-  padding: 2mm;
-  overflow: hidden;
-  background-color: white;
   border: 1px solid #ccc;
-}
-
-.barcode-item img {
-  width: 100%;
-  height: auto; /* Changed from fixed height to auto */
-  object-fit: contain;
-  margin-bottom: 1mm;
-}
-
-.barcode-text {
-  font-size: 8px;
-  line-height: 1;
-  text-align: center;
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 1mm;
+  box-sizing: border-box;
+  margin: 1px; /* Space between items */
+  background-color: #fff; /* Light background for items */
 }
 
 .additional-text {
-  font-size: 6px;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
+  font-size: 12px;
   text-align: center;
-  margin-top: 0.5mm;
+  word-break: break-all;
+  color: #000; /* Ensure text is visible */
 }
 
 @media print {
   @page {
     margin: 0;
+    size: auto;
   }
 
   body {
     margin: 0;
+    padding: 0;
   }
 
   .App {
     max-width: none;
   }
 
-  .controls-section, h1, h2 {
+  .controls-section, h1, h2, .preview-section {
     display: none;
   }
 
-  .preview-section {
-    width: auto;
+  .print-wrapper {
+    display: block;
   }
 
-  .preview-container {
-    border: none;
-    padding: 0;
-    overflow: visible;
-    max-height: none;
-    width: 100%;
-    max-width: none;
-  }
-
-  .print-area {
-    transform: none !important;
-  }
-
-  .barcode-row {
+  .print-trigger {
+    height: 1px;
     page-break-after: always;
   }
 
-  .barcode-item {
-    border: none;
+  .print-area {
+    display: block;
+  }
+
+  .print-item {
+    box-sizing: border-box;
+    page-break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .print-item img {
+    max-width: 100%;
+    max-height: 85%;
+    object-fit: contain;
+  }
+
+  .additional-text {
+    font-size: 8pt;
+    line-height: 1.2;
+    text-align: center;
+    width: 100%;
+    margin-top: 2mm;
+  }
+
+  .debug-info {
+    position: absolute;
+    top: 2mm;
+    left: 2mm;
+    font-size: 6pt;
+    color: #999;
+  }
+}
+
+body.printing {
+  width: 100%;
+  height: 100%;
+}
+
+body.printing .print-wrapper {
+  display: block;
+}
+
+body.printing .print-item {
+  page-break-inside: avoid;
+}
+
+/* Force Chrome to render the first page */
+@media print {
+  .print-wrapper::before {
+    content: '';
+    display: block;
+    height: 1px;
+    page-break-before: always;
   }
 }
 
@@ -447,4 +452,21 @@ body {
 .print-button:hover {
   background-color: #45a049;
 }
+
+.page-size-info {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.print-size-info {
+  font-size: 6px;
+  color: #999;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+/* ... existing CSS */
 

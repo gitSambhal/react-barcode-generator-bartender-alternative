@@ -36,7 +36,6 @@ function App() {
   const [customWidth, setCustomWidth] = useState('');
   const [customHeight, setCustomHeight] = useState('');
   const [customColumns, setCustomColumns] = useState('');
-  const [previewScale, setPreviewScale] = useState(1);
   const previewContainerRef = useRef(null);
 
   const addBarcodeEntry = () => {
@@ -53,7 +52,7 @@ function App() {
   const generateBarcode = useCallback(() => {
     if (barcodeEntries.length === 0) return;
 
-    const canvas = canvasRef.current;
+    const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
     let labelWidth, labelHeight;
@@ -65,14 +64,15 @@ function App() {
       labelHeight = labelSizes[labelSize].height;
     }
 
-    // Set canvas size based on label size
-    canvas.width = labelWidth;
-    canvas.height = labelHeight;
+    // Increase resolution (multiply dimensions by 4 for better quality)
+    canvas.width = labelWidth * 4;
+    canvas.height = labelHeight * 4;
 
-    // Set fixed barcode height
-    const barcodeHeight = 100; // 100mm height
+    // Set barcode height to 70% of label height
+    const barcodeHeight = labelHeight * 0.7 * 4; // 70% of label height, scaled up
 
-    console.log(`Barcode height: ${barcodeHeight}mm`); // Log the barcode height
+    console.log(`Label size: ${labelWidth}mm x ${labelHeight}mm`);
+    console.log(`Barcode height: ${barcodeHeight / 4}mm`);
 
     const newBarcodes = barcodeEntries.map(entry => {
       // Clear canvas for each new barcode
@@ -83,8 +83,9 @@ function App() {
         width: 2,
         height: barcodeHeight,
         displayValue: true,
-        margin: 5,
-        fontSize: 12,
+        margin: 10,
+        fontSize: Math.max(20, labelHeight * 0.1 * 4), // Adjust font size based on label height
+        textMargin: 8,
         background: "transparent"
       });
 
@@ -152,10 +153,22 @@ function App() {
     content: () => printRef.current,
     pageStyle: `
       @page {
-        size: ${getLabelDimensions().width * getLabelDimensions().columns}mm ${getLabelDimensions().height}mm;
+        size: ${getLabelDimensions().width}mm ${getLabelDimensions().height}mm;
         margin: 0;
       }
+      @media print {
+        body {
+          width: ${getLabelDimensions().width}mm;
+          height: ${getLabelDimensions().height}mm;
+        }
+      }
     `,
+    onBeforeGetContent: () => {
+      document.body.classList.add('printing');
+    },
+    onAfterPrint: () => {
+      document.body.classList.remove('printing');
+    },
   });
 
   const handleClearAll = () => {
@@ -230,23 +243,14 @@ function App() {
     }
   }, [lastAddedIndex]);
 
-  // Function to group barcodes into rows based on the number of columns
-  const groupBarcodesIntoRows = useCallback(() => {
-    const { columns } = getLabelDimensions();
-    return barcodes.reduce((rows, barcode, index) => {
-      if (index % columns === 0) rows.push([]);
-      rows[rows.length - 1].push(barcode);
-      return rows;
-    }, []);
-  }, [barcodes, getLabelDimensions]);
-
   const updatePreviewScale = useCallback(() => {
     if (previewContainerRef.current && barcodes.length > 0) {
       const containerWidth = previewContainerRef.current.offsetWidth;
-      const { width, columns } = getLabelDimensions();
+      const { width, columns } = getLabelDimensions(); // Get the width and columns of the selected size
       const rowWidth = width * columns;
-      const scale = (containerWidth - 20) / rowWidth; // 20px for padding
-      setPreviewScale(Math.min(scale, 1)); // Don't scale up, only down
+      const scale = Math.min((containerWidth - 20) / rowWidth, 1);
+      previewContainerRef.current.style.transform = `scale(${scale})`;
+      previewContainerRef.current.style.transformOrigin = 'top left';
     }
   }, [barcodes.length, getLabelDimensions]);
 
@@ -255,6 +259,62 @@ function App() {
     window.addEventListener('resize', updatePreviewScale);
     return () => window.removeEventListener('resize', updatePreviewScale);
   }, [updatePreviewScale]);
+
+  const renderPreviewItems = useCallback(() => {
+    const { width, height, columns } = getLabelDimensions();
+    const rows = Math.ceil(barcodes.length / columns);
+
+    return Array.from({ length: rows }).map((_, rowIndex) => (
+      <div key={rowIndex} style={{ display: 'flex', width: '100%' }}>
+        {barcodes.slice(rowIndex * columns, (rowIndex + 1) * columns).map((barcode, index) => (
+          <div 
+            key={index}
+            className="preview-item"
+            style={{
+              width: `${width}mm`,
+              height: `${height}mm`,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              border: '1px solid #ccc',
+              boxSizing: 'border-box',
+              margin: '1px', // Add margin to separate items
+              backgroundColor: '#fff', // Light background for items
+            }}
+          >
+            {barcode.image && (
+              <img 
+                src={barcode.image} 
+                alt={`Barcode ${rowIndex * columns + index + 1}`} 
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '85%',
+                  objectFit: 'contain'
+                }}
+              />
+            )}
+            {showExtraInfo && barcode.text && (
+              <div className="additional-text">{barcode.text}</div>
+            )}
+          </div>
+        ))}
+      </div>
+    ));
+  }, [barcodes, getLabelDimensions, showExtraInfo]);
+
+  const pageSizeInfo = useCallback(() => {
+    const { width, height, columns } = getLabelDimensions();
+    return `Page Size: ${width * columns}mm x ${height}mm (${columns} column${columns > 1 ? 's' : ''})`;
+  }, [getLabelDimensions]);
+
+  useEffect(() => {
+    if (barcodes.length > 0) {
+      console.log('Total barcodes:', barcodes.length);
+      console.log('First barcode:', barcodes[0]);
+      console.log('First barcode image:', barcodes[0].image);
+    }
+  }, [barcodes]);
 
   return (
     <div className="App">
@@ -419,56 +479,61 @@ function App() {
         </div>
 
         {barcodes.length > 0 && (
-          <div className="preview-section">
-            <h2>Preview</h2>
-            <div className="preview-container" ref={previewContainerRef}>
-              <div 
-                className="print-area" 
-                ref={printRef}
-                style={{
-                  transform: `scale(${previewScale})`,
-                  transformOrigin: 'top left',
-                }}
-              >
-                {groupBarcodesIntoRows().map((row, rowIndex) => (
-                  <div 
-                    key={rowIndex} 
-                    className="barcode-row"
-                    style={{
-                      width: `${getLabelDimensions().width * getLabelDimensions().columns}mm`,
-                      height: `${getLabelDimensions().height}mm`,
-                    }}
-                  >
-                    {row.map((barcode, index) => (
-                      <div 
-                        key={index} 
-                        className="barcode-item"
-                        style={{
-                          width: `${getLabelDimensions().width}mm`,
-                          height: `${getLabelDimensions().height}mm`,
-                        }}
-                      >
-                        <img 
-                          src={barcode.image} 
-                          alt={`Barcode ${rowIndex * getLabelDimensions().columns + index + 1}`} 
-                          style={{
-                            width: '100%',
-                            objectFit: 'contain'
-                          }}
-                        />
-                        {showExtraInfo && barcode.text && (
-                          <div className="additional-text">{barcode.text}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
+          <div className="preview-section" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+            <h2 style={{ color: '#fff' }}>Preview</h2>
+            <div className="page-size-info" style={{ color: '#fff' }}>{pageSizeInfo()}</div>
+            <div 
+              className="preview-container" 
+              ref={previewContainerRef} 
+              style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                overflow: 'hidden',
+                border: '1px solid #ccc',
+                backgroundColor: '#f9f9f9',
+              }}
+            >
+              {renderPreviewItems()}
             </div>
           </div>
         )}
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {/* Hidden print area for individual labels */}
+      <div style={{ display: 'none' }}>
+        <div ref={printRef} className="print-wrapper">
+          <div className="print-trigger"></div>
+          <div className="print-area">
+            {barcodes.map((barcode, index) => (
+              <div 
+                key={index} 
+                className="print-item"
+                style={{
+                  width: `${getLabelDimensions().width}mm`,
+                  height: `${getLabelDimensions().height}mm`,
+                  pageBreakAfter: index < barcodes.length - 1 ? 'always' : 'auto'
+                }}
+              >
+                <div className="debug-info">Barcode {index + 1}</div>
+                <img 
+                  src={barcode.image} 
+                  alt={`Barcode ${index + 1}`} 
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '85%',
+                    objectFit: 'contain'
+                  }}
+                />
+                {showExtraInfo && barcode.text && (
+                  <div className="additional-text">{barcode.text}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
