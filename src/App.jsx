@@ -283,21 +283,45 @@ function App() {
               boxSizing: 'border-box',
               margin: '1px', // Add margin to separate items
               backgroundColor: '#fff', // Light background for items
+              position: 'relative', // Add this for absolute positioning of children
             }}
           >
             {barcode.image && (
-              <img 
-                src={barcode.image} 
-                alt={`Barcode ${rowIndex * columns + index + 1}`} 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '85%',
-                  objectFit: 'contain'
-                }}
-              />
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)', // Center the image container
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <img 
+                  src={barcode.image} 
+                  alt={`Barcode ${rowIndex * columns + index + 1}`} 
+                  style={{
+                    maxWidth: '95%', // Slightly reduced to ensure it doesn't touch the borders
+                    maxHeight: '95%',
+                    objectFit: 'contain'
+                  }}
+                />
+              </div>
             )}
             {showExtraInfo && barcode.text && (
-              <div className="additional-text">{barcode.text}</div>
+              <div className="additional-text" style={{
+                position: 'absolute',
+                bottom: '5px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '90%',
+                textAlign: 'center',
+                fontSize: '10px',
+                wordBreak: 'break-word',
+              }}>
+                {barcode.text}
+              </div>
             )}
           </div>
         ))}
@@ -347,12 +371,12 @@ function App() {
   return (
     <div className="App">
       <Helmet>
-        <title>Barcode Generator | Create Custom Barcodes Online</title>
-        <meta name="description" content="Generate custom barcodes online with our easy-to-use Barcode Generator. Create individual barcodes, barcode ranges, or upload CSV files for bulk generation." />
-        <meta name="keywords" content="barcode generator, custom barcodes, online barcode creator, QR code generator" />
+        <title>Free Online Barcode Generator | BarTender Alternative</title>
+        <meta name="description" content="Generate barcodes online for free with our easy-to-use Barcode Generator. A powerful, web-based alternative to BarTender. Create individual barcodes, ranges, or bulk generate from CSV." />
+        <meta name="keywords" content="barcode generator, BarTender alternative, free barcode creator, online label maker, QR code generator" />
         <meta name="author" content="Suhail Akhtar" />
-        <meta property="og:title" content="Barcode Generator | Create Custom Barcodes Online" />
-        <meta property="og:description" content="Generate custom barcodes online with our easy-to-use Barcode Generator. Create individual barcodes, barcode ranges, or upload CSV files for bulk generation." />
+        <meta property="og:title" content="Free Online Barcode Generator | BarTender Alternative" />
+        <meta property="og:description" content="Generate barcodes online for free with our easy-to-use Barcode Generator. A powerful, web-based alternative to BarTender. Create individual barcodes, ranges, or bulk generate from CSV." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://your-app-url.com" />
         <meta property="og:image" content="https://your-app-url.com/path-to-your-logo.png" />
@@ -361,7 +385,7 @@ function App() {
 
       <header className="App-header">
         <h1 className="app-title">
-          Barcode Generator 📊
+          Barcode Generator 𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃
         </h1>
       </header>
 
