@@ -3,6 +3,7 @@ import JsBarcode from 'jsbarcode';
 import Papa from 'papaparse';
 import { useReactToPrint } from 'react-to-print';
 import { FaPrint } from 'react-icons/fa';
+import Darkmode from 'darkmode-js';
 import './App.css';
 
 const labelSizes = {
@@ -316,13 +317,44 @@ function App() {
     }
   }, [barcodes]);
 
+  useEffect(() => {
+    const options = {
+      bottom: '64px', // default: '32px'
+      right: 'unset', // default: '32px'
+      left: '32px', // default: 'unset'
+      time: '0.5s', // default: '0.3s'
+      mixColor: '#fff', // default: '#fff'
+      backgroundColor: '#fff',  // default: '#fff'
+      buttonColorDark: '#100f2c',  // default: '#100f2c'
+      buttonColorLight: '#fff', // default: '#fff'
+      saveInCookies: false, // default: true
+      label: '🌓', // default: ''
+      autoMatchOsTheme: true // default: true
+    };
+    
+    const darkmode = new Darkmode(options);
+    darkmode.showWidget();
+
+    // Clean up function
+    return () => {
+      const darkmodeActivator = document.querySelector('.darkmode-toggle');
+      if (darkmodeActivator) {
+        darkmodeActivator.remove();
+      }
+    };
+  }, []);
+
   return (
     <div className="App">
-      <h1>Barcode Generator</h1>
+      <header className="App-header">
+        <h1 className="app-title">
+          Barcode Generator 📊
+        </h1>
+      </header>
       <div className="app-layout">
         <div className="controls-section">
           <section className="input-section">
-            <h2>Individual Barcode</h2>
+            <h2>Individual Barcode 🏷️</h2>
             <input
               type="text"
               placeholder="Barcode data"
@@ -335,11 +367,11 @@ function App() {
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
-            <button onClick={addBarcodeEntry}>Add Barcode Entry</button>
+            <button onClick={addBarcodeEntry}>Add Barcode Entry ➕</button>
           </section>
 
           <section className="input-section">
-            <h2>Barcode Range</h2>
+            <h2>Barcode Range 🔢</h2>
             <input
               type="text"
               placeholder="Prefix (optional)"
@@ -360,16 +392,16 @@ function App() {
                 onChange={(e) => setRangeEnd(e.target.value)}
               />
             </div>
-            <button onClick={generateBarcodeRange}>Generate Barcode Range</button>
+            <button onClick={generateBarcodeRange}>Generate Barcode Range 🔄</button>
           </section>
 
           <section className="input-section">
-            <h2>File Upload</h2>
+            <h2>CSV File Upload 📁</h2>
             <input type="file" accept=".csv" onChange={handleFileUpload} ref={fileInputRef} />
           </section>
 
           <section className="options-section">
-            <h2>Options</h2>
+            <h2>Options ⚙️</h2>
             <div className="checkbox-container">
               <label className="checkbox-label">
                 <input
@@ -436,16 +468,16 @@ function App() {
           </section>
 
           <section className="action-buttons">
-            <button onClick={generateBarcode}>Generate Barcodes</button>
+            <button onClick={generateBarcode}>Generate Barcodes 🎨</button>
             <button onClick={handlePrint} className="print-button">
-              <FaPrint /> Print Barcodes
+              <FaPrint /> Print Barcodes 🖨️
             </button>
-            <button onClick={handleClearAll} className="clear-button">Clear All</button>
+            <button onClick={handleClearAll} className="clear-button">Clear All 🗑️</button>
           </section>
 
           {(barcodeEntries && barcodeEntries.length > 0) && (
             <section className="barcode-entries" ref={entriesSectionRef}>
-              <h2>Current Barcode Entries: (Total: {barcodeEntries?.length || 0})</h2>
+              <h2>Current Barcode Entries: (Total: {barcodeEntries?.length || 0}) 📋</h2>
               <table>
                 <thead>
                   <tr>
@@ -480,8 +512,8 @@ function App() {
 
         {barcodes.length > 0 && (
           <div className="preview-section" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ color: '#fff' }}>Preview</h2>
-            <div className="page-size-info" style={{ color: '#fff' }}>{pageSizeInfo()}</div>
+            <h2 style={{ color: '#fff' }}>Preview 👁️</h2>
+            <div className="page-size-info" style={{ color: '#fff' }}>{pageSizeInfo()} 📏</div>
             <div 
               className="preview-container" 
               ref={previewContainerRef} 
@@ -534,6 +566,19 @@ function App() {
           </div>
         </div>
       </div>
+
+      <footer style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#fff',
+        padding: '10px',
+        textAlign: 'center'
+      }}>
+        Created by Suhail Akhtar 👨‍💻
+      </footer>
     </div>
   );
 }

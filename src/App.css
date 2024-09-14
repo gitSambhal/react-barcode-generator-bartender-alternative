@@ -267,13 +267,20 @@ body {
   box-sizing: border-box;
   margin: 1px; /* Space between items */
   background-color: #fff; /* Light background for items */
+  position: relative;
+  overflow: hidden; /* Prevent content from spilling out */
 }
 
 .additional-text {
-  font-size: 12px;
+  font-size: 10px;
   text-align: center;
-  word-break: break-all;
-  color: #000; /* Ensure text is visible */
+  word-break: break-word;
+  color: #000;
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
 }
 
 @media print {
