@@ -164,9 +164,8 @@ function App() {
     const labelsPerPage = columns;
     const pages = Math.ceil(barcodes.length / labelsPerPage);
 
-    // Minimal horizontal padding, no vertical padding
-    const horizontalPadding = '0.1mm';
-    const verticalPadding = '0';
+    const horizontalPadding = '0.5mm';
+    const verticalPadding = '0.5mm';
 
     return Array.from({ length: pages }).map((_, pageIndex) => {
       const pageLabels = barcodes.slice(pageIndex * labelsPerPage, (pageIndex + 1) * labelsPerPage);
@@ -195,35 +194,39 @@ function App() {
                 height: `${labelHeight}mm`,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start', // Align content to the top
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                overflow: 'hidden',
                 padding: `${verticalPadding} ${horizontalPadding}`,
                 boxSizing: 'border-box',
+                border: '1px solid #ccc', // Add a border to see label boundaries
               }}
             >
               <img 
                 src={barcode.image} 
                 alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
                 style={{
-                  width: '98%',
-                  height: '85%', // Reduced height to make room for text
+                  width: '100%',
+                  height: '70%',
                   objectFit: 'contain'
                 }}
               />
               {showExtraInfo && barcode.text && (
                 <div className="additional-text" style={{
-                  fontSize: `${Math.max(4, labelHeight * 0.07)}px`,
+                  fontSize: `${Math.max(8, labelHeight * 0.12)}px`,
                   lineHeight: '1.2',
-                  marginTop: '0.5mm',
                   textAlign: 'center',
                   wordBreak: 'break-word',
                   width: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  display: '-webkit-box',
-                  WebkitLineClamp: '2',
-                  WebkitBoxOrient: 'vertical',
+                  height: '25%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontWeight: 'bold',
+                  color: '#000',
+                  textRendering: 'optimizeLegibility',
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
                 }}>
                   {barcode.text}
                 </div>
@@ -243,9 +246,20 @@ function App() {
         margin: 0;
       }
       @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
         .additional-text {
-          display: block !important;
+          font-size: ${Math.max(8, getPageAndLabelDimensions().labelHeight * 0.12)}px !important;
+          display: flex !important;
           visibility: visible !important;
+          font-family: Arial, Helvetica, sans-serif !important;
+          font-weight: bold !important;
+          color: #000 !important;
+          text-rendering: optimizeLegibility !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
         }
       }
     `,
