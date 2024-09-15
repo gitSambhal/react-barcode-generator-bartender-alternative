@@ -242,6 +242,12 @@ function App() {
         size: ${getPageAndLabelDimensions().pageWidth}mm ${getPageAndLabelDimensions().pageHeight}mm;
         margin: 0;
       }
+      @media print {
+        .additional-text {
+          display: block !important;
+          visibility: visible !important;
+        }
+      }
     `,
   });
 

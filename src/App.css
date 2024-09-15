@@ -586,3 +586,14 @@ footer {
   }
 }
 
+@media print {
+  .print-item {
+    page-break-inside: avoid;
+  }
+  
+  .additional-text {
+    display: block !important;
+    visibility: visible !important;
+  }
+}
+
