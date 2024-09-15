@@ -164,11 +164,9 @@ function App() {
     const labelsPerPage = columns;
     const pages = Math.ceil(barcodes.length / labelsPerPage);
 
-    console.log(`Page size: ${pageWidth}mm x ${pageHeight}mm`);
-    console.log(`Label size: ${labelWidth}mm x ${labelHeight}mm`);
-    console.log(`Total barcodes: ${barcodes.length}`);
-    console.log(`Labels per page: ${labelsPerPage}`);
-    console.log(`Total pages: ${pages}`);
+    // Calculate padding based on the number of columns
+    const horizontalPadding = columns > 1 ? '2.5%' : '0';
+    const verticalPadding = '5%';
 
     return Array.from({ length: pages }).map((_, pageIndex) => {
       const pageLabels = barcodes.slice(pageIndex * labelsPerPage, (pageIndex + 1) * labelsPerPage);
@@ -199,20 +197,31 @@ function App() {
                 justifyContent: 'center',
                 alignItems: 'center',
                 overflow: 'hidden',
+                padding: `${verticalPadding} ${horizontalPadding}`,
+                boxSizing: 'border-box',
               }}
             >
-              <img 
-                src={barcode.image} 
-                alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
-                style={{
-                  maxWidth: '95%',
-                  maxHeight: '90%',
-                  objectFit: 'contain'
-                }}
-              />
-              {showExtraInfo && barcode.text && (
-                <div className="additional-text">{barcode.text}</div>
-              )}
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <img 
+                  src={barcode.image} 
+                  alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '90%',
+                    objectFit: 'contain'
+                  }}
+                />
+                {showExtraInfo && barcode.text && (
+                  <div className="additional-text">{barcode.text}</div>
+                )}
+              </div>
             </div>
           ))}
         </div>
