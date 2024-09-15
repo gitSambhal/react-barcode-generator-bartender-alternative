@@ -40,7 +40,6 @@ function App() {
   const [customHeight, setCustomHeight] = useState('');
   const [customColumns, setCustomColumns] = useState('');
   const previewContainerRef = useRef(null);
-  const [debugMode, setDebugMode] = useState(false);
 
   const addBarcodeEntry = () => {
     if (data.trim() !== '') {
@@ -153,7 +152,7 @@ function App() {
 
     return {
       pageWidth,
-      pageHeight: pageHeight - 1,
+      pageHeight: pageHeight - 0.3, // Subtract 0.3mm from page height
       labelWidth,
       labelHeight,
       columns
@@ -183,11 +182,9 @@ function App() {
             height: `${pageHeight}mm`,
             display: 'flex',
             flexDirection: 'row',
-            backgroundColor: debugMode ? (pageIndex % 2 === 0 ? '#f0f0f0' : '#ffffff') : 'transparent',
             pageBreakAfter: 'always',
             overflow: 'hidden',
             boxSizing: 'border-box',
-            padding: debugMode ? '0.5mm' : '0',
           }}
         >
           {pageLabels.map((barcode, index) => (
@@ -197,13 +194,11 @@ function App() {
               style={{
                 width: `${labelWidth}mm`,
                 height: `${labelHeight}mm`,
-                outline: debugMode ? '1px dashed red' : 'none',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
                 overflow: 'hidden',
-                margin: debugMode ? '0.25mm' : '0',
               }}
             >
               <img 
@@ -218,17 +213,12 @@ function App() {
               {showExtraInfo && barcode.text && (
                 <div className="additional-text">{barcode.text}</div>
               )}
-              {debugMode && (
-                <div style={{ position: 'absolute', top: 0, left: 0, fontSize: '8px', color: 'red' }}>
-                  {pageIndex * labelsPerPage + index + 1}
-                </div>
-              )}
             </div>
           ))}
         </div>
       );
     });
-  }, [barcodes, getPageAndLabelDimensions, showExtraInfo, debugMode]);
+  }, [barcodes, getPageAndLabelDimensions, showExtraInfo]);
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
@@ -639,31 +629,11 @@ function App() {
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* Print preview area */}
-      <div className="print-preview">
-        <h3>Print Preview</h3>
-        <div className="preview-outer-container">
-          <div className="preview-container">
-            <div ref={printRef} className="print-wrapper">
-              {renderPrintItems()}
-            </div>
-          </div>
+      {/* Hidden print content */}
+      <div style={{ display: 'none' }}>
+        <div ref={printRef} className="print-wrapper">
+          {renderPrintItems()}
         </div>
-      </div>
-
-      <button onClick={handlePrint} className="print-button">
-        <FaPrint /> Print Labels
-      </button>
-
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={debugMode}
-            onChange={(e) => setDebugMode(e.target.checked)}
-          />
-          Debug Mode
-        </label>
       </div>
     </div>
   );

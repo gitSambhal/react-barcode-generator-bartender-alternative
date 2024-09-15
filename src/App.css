@@ -264,6 +264,7 @@ body {
   justify-content: center;
   align-items: center;
   border: 1px solid #ccc;
+  
   box-sizing: border-box;
   margin: 1px; /* Space between items */
   background-color: #fff; /* Light background for items */
@@ -530,5 +531,58 @@ footer {
   }
 }
 
-/* ... existing CSS */
+.print-page {
+  page-break-after: always;
+}
+
+.print-item {
+  box-sizing: border-box;
+}
+
+.print-item img {
+  max-width: 95%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+.additional-text {
+  font-size: 8px;
+  text-align: center;
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+.print-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.print-button:hover {
+  background-color: #45a049;
+}
+
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-page {
+    margin-bottom: 0;
+  }
+
+  .print-item {
+    page-break-inside: avoid;
+  }
+}
 
