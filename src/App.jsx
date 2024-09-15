@@ -164,9 +164,9 @@ function App() {
     const labelsPerPage = columns;
     const pages = Math.ceil(barcodes.length / labelsPerPage);
 
-    // Calculate padding based on the number of columns
-    const horizontalPadding = columns > 1 ? '0.5mm' : '0';
-    const verticalPadding = '0.5mm';
+    // Reduce padding to minimal values
+    const horizontalPadding = '0.1mm';
+    const verticalPadding = '0.1mm';
 
     return Array.from({ length: pages }).map((_, pageIndex) => {
       const pageLabels = barcodes.slice(pageIndex * labelsPerPage, (pageIndex + 1) * labelsPerPage);
@@ -206,15 +206,15 @@ function App() {
                 src={barcode.image} 
                 alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
                 style={{
-                  width: '95%',
-                  height: '90%',
+                  width: '98%',
+                  height: '92%',
                   objectFit: 'contain'
                 }}
               />
               {showExtraInfo && barcode.text && (
                 <div className="additional-text" style={{
-                  fontSize: `${Math.max(6, labelHeight * 0.08)}px`,
-                  marginTop: '0.5mm',
+                  fontSize: `${Math.max(4, labelHeight * 0.06)}px`,
+                  marginTop: '0.2mm',
                   textAlign: 'center',
                   wordBreak: 'break-word',
                   width: '100%'
