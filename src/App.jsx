@@ -165,8 +165,8 @@ function App() {
     const pages = Math.ceil(barcodes.length / labelsPerPage);
 
     // Calculate padding based on the number of columns
-    const horizontalPadding = columns > 1 ? '2.5%' : '0';
-    const verticalPadding = '5%';
+    const horizontalPadding = columns > 1 ? '0.5mm' : '0';
+    const verticalPadding = '0.5mm';
 
     return Array.from({ length: pages }).map((_, pageIndex) => {
       const pageLabels = barcodes.slice(pageIndex * labelsPerPage, (pageIndex + 1) * labelsPerPage);
@@ -180,6 +180,7 @@ function App() {
             height: `${pageHeight}mm`,
             display: 'flex',
             flexDirection: 'row',
+            flexWrap: 'wrap',
             pageBreakAfter: 'always',
             overflow: 'hidden',
             boxSizing: 'border-box',
@@ -201,27 +202,26 @@ function App() {
                 boxSizing: 'border-box',
               }}
             >
-              <div style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <img 
-                  src={barcode.image} 
-                  alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '90%',
-                    objectFit: 'contain'
-                  }}
-                />
-                {showExtraInfo && barcode.text && (
-                  <div className="additional-text">{barcode.text}</div>
-                )}
-              </div>
+              <img 
+                src={barcode.image} 
+                alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
+                style={{
+                  width: '95%',
+                  height: '90%',
+                  objectFit: 'contain'
+                }}
+              />
+              {showExtraInfo && barcode.text && (
+                <div className="additional-text" style={{
+                  fontSize: `${Math.max(6, labelHeight * 0.08)}px`,
+                  marginTop: '0.5mm',
+                  textAlign: 'center',
+                  wordBreak: 'break-word',
+                  width: '100%'
+                }}>
+                  {barcode.text}
+                </div>
+              )}
             </div>
           ))}
         </div>
