@@ -206,25 +206,25 @@ function App() {
                 alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
                 style={{
                   width: '100%',
-                  height: '70%',
+                  height: '65%',
                   objectFit: 'contain'
                 }}
               />
               {showExtraInfo && barcode.text && (
                 <div className="additional-text" style={{
-                  fontSize: `${Math.max(8, labelHeight * 0.12)}px`,
+                  fontSize: `${Math.max(10, labelHeight * 0.15)}px`,
                   lineHeight: '1.2',
                   textAlign: 'center',
                   wordBreak: 'break-word',
                   width: '100%',
-                  height: '25%',
+                  height: '30%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontFamily: 'Verdana, Arial, sans-serif',
                   fontWeight: 'bold',
                   color: '#000',
-                  textRendering: 'optimizeLegibility',
+                  textRendering: 'geometricPrecision',
                   WebkitFontSmoothing: 'antialiased',
                   MozOsxFontSmoothing: 'grayscale',
                 }}>
@@ -251,13 +251,13 @@ function App() {
           print-color-adjust: exact;
         }
         .additional-text {
-          font-size: ${Math.max(8, getPageAndLabelDimensions().labelHeight * 0.12)}px !important;
+          font-size: ${Math.max(10, getPageAndLabelDimensions().labelHeight * 0.15)}px !important;
           display: flex !important;
           visibility: visible !important;
-          font-family: Arial, Helvetica, sans-serif !important;
+          font-family: Verdana, Arial, sans-serif !important;
           font-weight: bold !important;
           color: #000 !important;
-          text-rendering: optimizeLegibility !important;
+          text-rendering: geometricPrecision !important;
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
         }
