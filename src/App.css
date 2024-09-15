@@ -326,12 +326,6 @@ body {
     position: relative;
   }
 
-  .print-item img {
-    max-width: 100%;
-    max-height: 85%;
-    object-fit: contain;
-  }
-
   .additional-text {
     font-size: 8pt;
     line-height: 1.2;
@@ -360,16 +354,6 @@ body.printing .print-wrapper {
 
 body.printing .print-item {
   page-break-inside: avoid;
-}
-
-/* Force Chrome to render the first page */
-@media print {
-  .print-wrapper::before {
-    content: '';
-    display: block;
-    height: 1px;
-    page-break-before: always;
-  }
 }
 
 /* Ensure the entries section is always visible */
@@ -476,6 +460,74 @@ body.printing .print-item {
 
 footer {
   margin-top: 30px;
+}
+
+.print-preview {
+  margin: 20px 0;
+}
+
+.preview-outer-container {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #ccc;
+}
+
+.preview-container {
+  padding: 10px;
+}
+
+.print-wrapper {
+  display: inline-block;
+}
+
+.print-page {
+  box-sizing: border-box;
+}
+
+.print-item {
+  box-sizing: border-box;
+}
+
+.print-item img {
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
+}
+
+.additional-text {
+  font-size: 8px;
+  text-align: center;
+  word-break: break-word;
+}
+
+@media print {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-preview, .preview-outer-container {
+    display: none;
+  }
+
+  .print-wrapper {
+    display: block;
+    overflow: hidden;
+  }
+
+  .print-page {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    page-break-after: always;
+  }
+
+  .print-item {
+    page-break-inside: avoid;
+  }
 }
 
 /* ... existing CSS */

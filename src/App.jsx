@@ -17,6 +17,7 @@ const labelSizes = {
   '3x2-3col': { width: 75, height: 50, columns: 3 },
   '4x3-1col': { width: 100, height: 75, columns: 1 },
   '4x3-2col': { width: 100, height: 75, columns: 2 },
+  '4x1-2col': { width: 100, height: 25, columns: 2 }, // New option
 };
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
   const [customHeight, setCustomHeight] = useState('');
   const [customColumns, setCustomColumns] = useState('');
   const previewContainerRef = useRef(null);
+  const [debugMode, setDebugMode] = useState(false);
 
   const addBarcodeEntry = () => {
     if (data.trim() !== '') {
@@ -136,41 +138,106 @@ function App() {
     }
   };
 
-  const getLabelDimensions = useCallback(() => {
+  const getPageAndLabelDimensions = useCallback(() => {
+    let pageWidth, pageHeight, columns;
     if (useCustomSize) {
-      return {
-        width: parseFloat(customWidth),
-        height: parseFloat(customHeight),
-        columns: parseInt(customColumns, 10) || 1
-      };
+      pageWidth = parseFloat(customWidth);
+      pageHeight = parseFloat(customHeight);
+      columns = parseInt(customColumns, 10) || 1;
+    } else {
+      ({ width: pageWidth, height: pageHeight, columns } = labelSizes[labelSize]);
     }
+
+    const labelWidth = pageWidth / columns;
+    const labelHeight = pageHeight;
+
     return {
-      width: labelSizes[labelSize].width,
-      height: labelSizes[labelSize].height,
-      columns: labelSizes[labelSize].columns
+      pageWidth,
+      pageHeight: pageHeight - 1,
+      labelWidth,
+      labelHeight,
+      columns
     };
   }, [useCustomSize, customWidth, customHeight, customColumns, labelSize]);
+
+  const renderPrintItems = useCallback(() => {
+    const { pageWidth, pageHeight, labelWidth, labelHeight, columns } = getPageAndLabelDimensions();
+    const labelsPerPage = columns;
+    const pages = Math.ceil(barcodes.length / labelsPerPage);
+
+    console.log(`Page size: ${pageWidth}mm x ${pageHeight}mm`);
+    console.log(`Label size: ${labelWidth}mm x ${labelHeight}mm`);
+    console.log(`Total barcodes: ${barcodes.length}`);
+    console.log(`Labels per page: ${labelsPerPage}`);
+    console.log(`Total pages: ${pages}`);
+
+    return Array.from({ length: pages }).map((_, pageIndex) => {
+      const pageLabels = barcodes.slice(pageIndex * labelsPerPage, (pageIndex + 1) * labelsPerPage);
+      
+      return (
+        <div 
+          key={pageIndex} 
+          className="print-page" 
+          style={{ 
+            width: `${pageWidth}mm`, 
+            height: `${pageHeight}mm`,
+            display: 'flex',
+            flexDirection: 'row',
+            backgroundColor: debugMode ? (pageIndex % 2 === 0 ? '#f0f0f0' : '#ffffff') : 'transparent',
+            pageBreakAfter: 'always',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            padding: debugMode ? '0.5mm' : '0',
+          }}
+        >
+          {pageLabels.map((barcode, index) => (
+            <div 
+              key={index} 
+              className="print-item"
+              style={{
+                width: `${labelWidth}mm`,
+                height: `${labelHeight}mm`,
+                outline: debugMode ? '1px dashed red' : 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'hidden',
+                margin: debugMode ? '0.25mm' : '0',
+              }}
+            >
+              <img 
+                src={barcode.image} 
+                alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
+                style={{
+                  maxWidth: '95%',
+                  maxHeight: '90%',
+                  objectFit: 'contain'
+                }}
+              />
+              {showExtraInfo && barcode.text && (
+                <div className="additional-text">{barcode.text}</div>
+              )}
+              {debugMode && (
+                <div style={{ position: 'absolute', top: 0, left: 0, fontSize: '8px', color: 'red' }}>
+                  {pageIndex * labelsPerPage + index + 1}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    });
+  }, [barcodes, getPageAndLabelDimensions, showExtraInfo, debugMode]);
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
     pageStyle: `
       @page {
-        size: ${getLabelDimensions().width}mm ${getLabelDimensions().height}mm;
+        size: ${getPageAndLabelDimensions().pageWidth}mm ${getPageAndLabelDimensions().pageHeight}mm;
         margin: 0;
       }
-      @media print {
-        body {
-          width: ${getLabelDimensions().width}mm;
-          height: ${getLabelDimensions().height}mm;
-        }
-      }
     `,
-    onBeforeGetContent: () => {
-      document.body.classList.add('printing');
-    },
-    onAfterPrint: () => {
-      document.body.classList.remove('printing');
-    },
   });
 
   const handleClearAll = () => {
@@ -183,7 +250,7 @@ function App() {
       setBarcodeEntries([]);
       setBarcodes([]);
       setShowExtraInfo(true);
-      setLabelSize('2x1-2col');
+      setLabelSize('4x1-2col');
       setUseCustomSize(false);
       setCustomWidth('');
       setCustomHeight('');
@@ -248,13 +315,13 @@ function App() {
   const updatePreviewScale = useCallback(() => {
     if (previewContainerRef.current && barcodes.length > 0) {
       const containerWidth = previewContainerRef.current.offsetWidth;
-      const { width, columns } = getLabelDimensions(); // Get the width and columns of the selected size
+      const { width, columns } = getPageAndLabelDimensions(); // Get the width and columns of the selected size
       const rowWidth = width * columns;
       const scale = Math.min((containerWidth - 20) / rowWidth, 1);
       previewContainerRef.current.style.transform = `scale(${scale})`;
       previewContainerRef.current.style.transformOrigin = 'top left';
     }
-  }, [barcodes.length, getLabelDimensions]);
+  }, [barcodes.length, getPageAndLabelDimensions]);
 
   useEffect(() => {
     updatePreviewScale();
@@ -263,7 +330,7 @@ function App() {
   }, [updatePreviewScale]);
 
   const renderPreviewItems = useCallback(() => {
-    const { width, height, columns } = getLabelDimensions();
+    const { pageWidth, pageHeight, labelWidth, labelHeight, columns } = getPageAndLabelDimensions();
     const rows = Math.ceil(barcodes.length / columns);
 
     return Array.from({ length: rows }).map((_, rowIndex) => (
@@ -273,8 +340,8 @@ function App() {
             key={index}
             className="preview-item"
             style={{
-              width: `${width}mm`,
-              height: `${height}mm`,
+              width: `${labelWidth}mm`,
+              height: `${labelHeight}mm`,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -303,12 +370,12 @@ function App() {
         ))}
       </div>
     ));
-  }, [barcodes, getLabelDimensions, showExtraInfo]);
+  }, [barcodes, getPageAndLabelDimensions, showExtraInfo]);
 
   const pageSizeInfo = useCallback(() => {
-    const { width, height, columns } = getLabelDimensions();
-    return `Page Size: ${width * columns}mm x ${height}mm (${columns} column${columns > 1 ? 's' : ''})`;
-  }, [getLabelDimensions]);
+    const { pageWidth, pageHeight, columns } = getPageAndLabelDimensions();
+    return `Page Size: ${pageWidth}mm x ${pageHeight}mm (${columns} column${columns > 1 ? 's' : ''})`;
+  }, [getPageAndLabelDimensions]);
 
   useEffect(() => {
     if (barcodes.length > 0) {
@@ -343,6 +410,13 @@ function App() {
       }
     };
   }, []);
+
+  const previewScale = useCallback(() => {
+    const { pageWidth, pageHeight, columns } = getPageAndLabelDimensions();
+    const totalWidth = pageWidth * columns;
+    const containerWidth = 800; // max-width of preview container
+    return Math.min(1, containerWidth / totalWidth);
+  }, [getPageAndLabelDimensions]);
 
   return (
     <div className="App">
@@ -477,6 +551,7 @@ function App() {
                 <option value="3x2-3col">3x2 inches (75mm x 50mm) - 3 columns</option>
                 <option value="4x3-1col">4x3 inches (100mm x 75mm) - 1 column</option>
                 <option value="4x3-2col">4x3 inches (100mm x 75mm) - 2 columns</option>
+                <option value="4x1-2col">4x1 inches (100mm x 25mm) - 2 columns</option>
               </select>
             )}
           </section>
@@ -562,40 +637,33 @@ function App() {
         </a> 👨‍💻
       </footer>
 
-
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* Hidden print area for individual labels */}
-      <div style={{ display: 'none' }}>
-        <div ref={printRef} className="print-wrapper">
-          <div className="print-trigger"></div>
-          <div className="print-area">
-            {barcodes.map((barcode, index) => (
-              <div 
-                key={index} 
-                className="print-item"
-                style={{
-                  width: `${getLabelDimensions().width}mm`,
-                  height: `${getLabelDimensions().height}mm`,
-                  pageBreakAfter: index < barcodes.length - 1 ? 'always' : 'auto'
-                }}
-              >
-                <img 
-                  src={barcode.image} 
-                  alt={`Barcode ${index + 1}`} 
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '85%',
-                    objectFit: 'contain'
-                  }}
-                />
-                {showExtraInfo && barcode.text && (
-                  <div className="additional-text">{barcode.text}</div>
-                )}
-              </div>
-            ))}
+      {/* Print preview area */}
+      <div className="print-preview">
+        <h3>Print Preview</h3>
+        <div className="preview-outer-container">
+          <div className="preview-container">
+            <div ref={printRef} className="print-wrapper">
+              {renderPrintItems()}
+            </div>
           </div>
         </div>
+      </div>
+
+      <button onClick={handlePrint} className="print-button">
+        <FaPrint /> Print Labels
+      </button>
+
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={debugMode}
+            onChange={(e) => setDebugMode(e.target.checked)}
+          />
+          Debug Mode
+        </label>
       </div>
     </div>
   );
