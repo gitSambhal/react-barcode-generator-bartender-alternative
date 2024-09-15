@@ -164,9 +164,9 @@ function App() {
     const labelsPerPage = columns;
     const pages = Math.ceil(barcodes.length / labelsPerPage);
 
-    // Reduce padding to minimal values
+    // Minimal horizontal padding, no vertical padding
     const horizontalPadding = '0.1mm';
-    const verticalPadding = '0.1mm';
+    const verticalPadding = '0';
 
     return Array.from({ length: pages }).map((_, pageIndex) => {
       const pageLabels = barcodes.slice(pageIndex * labelsPerPage, (pageIndex + 1) * labelsPerPage);
@@ -195,7 +195,7 @@ function App() {
                 height: `${labelHeight}mm`,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: 'flex-start', // Align content to the top
                 alignItems: 'center',
                 overflow: 'hidden',
                 padding: `${verticalPadding} ${horizontalPadding}`,
@@ -207,17 +207,23 @@ function App() {
                 alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
                 style={{
                   width: '98%',
-                  height: '92%',
+                  height: '85%', // Reduced height to make room for text
                   objectFit: 'contain'
                 }}
               />
               {showExtraInfo && barcode.text && (
                 <div className="additional-text" style={{
-                  fontSize: `${Math.max(4, labelHeight * 0.06)}px`,
-                  marginTop: '0.2mm',
+                  fontSize: `${Math.max(4, labelHeight * 0.07)}px`,
+                  lineHeight: '1.2',
+                  marginTop: '0.5mm',
                   textAlign: 'center',
                   wordBreak: 'break-word',
-                  width: '100%'
+                  width: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: '2',
+                  WebkitBoxOrient: 'vertical',
                 }}>
                   {barcode.text}
                 </div>
