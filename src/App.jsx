@@ -89,6 +89,8 @@ function App() {
         margin: 10,
         fontSize: Math.max(20, labelHeight * 0.1 * 4), // Adjust font size based on label height
         textMargin: 8,
+        font: "monospace",
+        fontOptions: "bold",
         background: "transparent"
       });
 
@@ -198,7 +200,6 @@ function App() {
                 alignItems: 'center',
                 padding: `${verticalPadding} ${horizontalPadding}`,
                 boxSizing: 'border-box',
-                border: '1px solid #ccc', // Add a border to see label boundaries
               }}
             >
               <img 
@@ -206,27 +207,29 @@ function App() {
                 alt={`Barcode ${pageIndex * labelsPerPage + index + 1}`} 
                 style={{
                   width: '100%',
-                  height: '65%',
+                  height: '60%',
                   objectFit: 'contain'
                 }}
               />
               {showExtraInfo && barcode.text && (
                 <div className="additional-text" style={{
-                  fontSize: `${Math.max(10, labelHeight * 0.15)}px`,
+                  fontSize: `${Math.max(12, labelHeight * 0.18)}px`,
                   lineHeight: '1.2',
                   textAlign: 'center',
                   wordBreak: 'break-word',
                   width: '100%',
-                  height: '30%',
+                  height: '35%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontFamily: 'Verdana, Arial, sans-serif',
-                  fontWeight: 'bold',
+                  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                  fontWeight: '700',
                   color: '#000',
-                  textRendering: 'geometricPrecision',
+                  textRendering: 'optimizeLegibility',
                   WebkitFontSmoothing: 'antialiased',
                   MozOsxFontSmoothing: 'grayscale',
+                  textShadow: '0 0 1px rgba(0, 0, 0, 0.3)',
+                  letterSpacing: '0.5px',
                 }}>
                   {barcode.text}
                 </div>
@@ -251,15 +254,17 @@ function App() {
           print-color-adjust: exact;
         }
         .additional-text {
-          font-size: ${Math.max(10, getPageAndLabelDimensions().labelHeight * 0.15)}px !important;
+          font-size: ${Math.max(12, getPageAndLabelDimensions().labelHeight * 0.18)}px !important;
           display: flex !important;
           visibility: visible !important;
-          font-family: Verdana, Arial, sans-serif !important;
-          font-weight: bold !important;
+          font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+          font-weight: 700 !important;
           color: #000 !important;
-          text-rendering: geometricPrecision !important;
+          text-rendering: optimizeLegibility !important;
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
+          text-shadow: 0 0 1px rgba(0, 0, 0, 0.3) !important;
+          letter-spacing: 0.5px !important;
         }
       }
     `,
