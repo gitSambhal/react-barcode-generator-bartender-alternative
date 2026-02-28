@@ -63,7 +63,7 @@ function saveSettings(settings) {
 async function generateBarcodeImage(entryData, labelWidth, labelHeight, barcodeType = 'CODE128') {
   if (barcodeType === 'QR') {
     try {
-      const size = Math.min(labelWidth, labelHeight) * 4;
+      const size = Math.min(labelWidth, labelHeight) * 6;
       const dataUrl = await QRCode.toDataURL(entryData || ' ', {
         width: size,
         margin: 1,
@@ -77,19 +77,20 @@ async function generateBarcodeImage(entryData, labelWidth, labelHeight, barcodeT
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = labelWidth * 4;
-  canvas.height = labelHeight * 4;
-  const barcodeHeight = labelHeight * 0.7 * 4;
+  const scale = 6;
+  canvas.width = labelWidth * scale;
+  canvas.height = labelHeight * scale;
+  const barcodeHeight = labelHeight * 0.7 * scale;
 
   const renderBarcode = (format) => {
     try {
       JsBarcode(canvas, entryData, {
         format,
-        width: 2,
+        width: 3,
         height: barcodeHeight,
         displayValue: true,
-        margin: 10,
-        fontSize: Math.max(20, labelHeight * 0.1 * 4),
+        margin: 12,
+        fontSize: Math.max(24, labelHeight * 0.12 * scale),
         textMargin: 8,
         font: 'monospace',
         fontOptions: 'bold',
@@ -110,102 +111,117 @@ async function generateBarcodeImage(entryData, labelWidth, labelHeight, barcodeT
   return result;
 }
 
+// Yield to allow UI updates between batches
+function yieldToUI() {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
 // ============================================
-// VIRTUAL LIST COMPONENT (for large datasets)
+// BARCODE IMAGE CACHE
 // ============================================
 
-const VIRTUAL_THRESHOLD = 100;
-const ROW_HEIGHT = 40;
+const barcodeCache = new Map();
+const MAX_CACHE_SIZE = 5000;
 
-function VirtualizedTable({ entries, hasTextColumn, onDelete, lastAddedIndex }) {
+function getCacheKey(data, labelWidth, labelHeight, barcodeType) {
+  return `${data}|${labelWidth}|${labelHeight}|${barcodeType}`;
+}
+
+async function getCachedBarcodeImage(entryData, labelWidth, labelHeight, barcodeType) {
+  const key = getCacheKey(entryData, labelWidth, labelHeight, barcodeType);
+  if (barcodeCache.has(key)) {
+    return barcodeCache.get(key);
+  }
+  const image = await generateBarcodeImage(entryData, labelWidth, labelHeight, barcodeType);
+  // LRU-like eviction: if cache is full, remove oldest entries
+  if (barcodeCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = barcodeCache.keys().next().value;
+    barcodeCache.delete(firstKey);
+  }
+  barcodeCache.set(key, image);
+  return image;
+}
+
+// ============================================
+// VIRTUALIZED ENTRIES LIST — renders only visible cards
+// ============================================
+
+const ENTRY_CARD_HEIGHT = 76; // estimated card height + gap in px
+const ENTRY_OVERSCAN = 5;
+
+function VirtualizedEntryCardList({ entries, lastAddedIndex, onUpdate, onDelete }) {
   const containerRef = useRef(null);
   const [scrollTop, setScrollTop] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(300);
+  const [containerHeight, setContainerHeight] = useState(400);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(([entry]) => {
-      setContainerHeight(entry.contentRect.height);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
+    const obs = new ResizeObserver(([e]) => setContainerHeight(e.contentRect.height));
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
 
   const handleScroll = useCallback((e) => {
     setScrollTop(e.target.scrollTop);
   }, []);
 
-  const totalHeight = entries.length * ROW_HEIGHT;
-  const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 5);
-  const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT) + 10;
+  const totalHeight = entries.length * ENTRY_CARD_HEIGHT;
+  const startIndex = Math.max(0, Math.floor(scrollTop / ENTRY_CARD_HEIGHT) - ENTRY_OVERSCAN);
+  const visibleCount = Math.ceil(containerHeight / ENTRY_CARD_HEIGHT) + 2 * ENTRY_OVERSCAN;
   const endIndex = Math.min(entries.length, startIndex + visibleCount);
 
   return (
     <div
       ref={containerRef}
-      className="entries-table-wrapper virtual-list-container"
+      className="entries-card-list entries-card-list-virtual"
       onScroll={handleScroll}
-      style={{ maxHeight: '300px' }}
+      style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 340px)' }}
     >
-      <table className="entries-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Barcode Data</th>
-            {hasTextColumn && <th>Label Text</th>}
-            <th></th>
-          </tr>
-        </thead>
-      </table>
       <div style={{ height: totalHeight, position: 'relative' }}>
-        <table className="entries-table" style={{ position: 'absolute', top: startIndex * ROW_HEIGHT, width: '100%' }}>
-          <tbody>
-            {entries.slice(startIndex, endIndex).map((entry, i) => {
-              const realIndex = startIndex + i;
-              return (
-                <tr key={realIndex} className={realIndex === lastAddedIndex ? 'new-entry' : ''}>
-                  <td>{realIndex + 1}</td>
-                  <td className="data-cell">{entry.data}</td>
-                  {hasTextColumn && <td>{entry.text}</td>}
-                  <td>
-                    <button className="delete-btn" onClick={() => onDelete(realIndex)} aria-label="Delete entry">×</button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div style={{ position: 'absolute', top: startIndex * ENTRY_CARD_HEIGHT, left: 0, right: 0 }}>
+          {entries.slice(startIndex, endIndex).map((entry, i) => {
+            const realIndex = startIndex + i;
+            return (
+              <div key={realIndex} className={`entry-card ${realIndex === lastAddedIndex ? 'entry-card-new' : ''}`} style={{ marginBottom: 8 }}>
+                <div className="entry-card-index">{realIndex + 1}</div>
+                <div className="entry-card-body">
+                  <input
+                    className="entry-card-input"
+                    type="text"
+                    value={entry.data}
+                    onChange={e => onUpdate(realIndex, 'data', e.target.value)}
+                    aria-label={`Barcode data for entry ${realIndex + 1}`}
+                  />
+                  <input
+                    className="entry-card-input-label"
+                    type="text"
+                    value={entry.text || ''}
+                    placeholder="Label text…"
+                    onChange={e => onUpdate(realIndex, 'text', e.target.value)}
+                    aria-label={`Label text for entry ${realIndex + 1}`}
+                  />
+                </div>
+                <button className="entry-card-delete" onClick={() => onDelete(realIndex)} aria-label="Delete entry">
+                  <FaTimes />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-function SimpleTable({ entries, hasTextColumn, onDelete, lastAddedIndex }) {
+function LabelMiniPreview({ columns }) {
   return (
-    <div className="entries-table-wrapper" style={{ maxHeight: '300px' }}>
-      <table className="entries-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Barcode Data</th>
-            {hasTextColumn && <th>Label Text</th>}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry, index) => (
-            <tr key={index} className={index === lastAddedIndex ? 'new-entry' : ''}>
-              <td>{index + 1}</td>
-              <td className="data-cell">{entry.data}</td>
-              {hasTextColumn && <td>{entry.text}</td>}
-              <td>
-                <button className="delete-btn" onClick={() => onDelete(index)} aria-label="Delete entry">×</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="label-mini-preview-wrap">
+      <div className="label-size-mini-preview">
+        {Array.from({ length: Math.min(columns, 4) }).map((_, i) => (
+          <div key={i} className="label-size-mini-cell" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -270,6 +286,7 @@ function App() {
   const [text, setText] = useState('');
   const [barcodeEntries, setBarcodeEntries] = useState([]);
   const [barcodes, setBarcodes] = useState([]);
+  const [generationProgress, setGenerationProgress] = useState(null); // null = complete, 0-100 = in progress
   const [showExtraInfo, setShowExtraInfo] = useState(savedSettings?.showExtraInfo ?? true);
   const [labelSize, setLabelSize] = useState(savedSettings?.labelSize ?? '2x1-2col');
   const [barcodeType, setBarcodeType] = useState(savedSettings?.barcodeType ?? 'CODE128');
@@ -285,6 +302,7 @@ function App() {
   const [showSettingsRestored, setShowSettingsRestored] = useState(restoredFromStorage);
   const [activeTab, setActiveTab] = useState('data');
   const [dataSubSection, setDataSubSection] = useState('single');
+  const [isPrepPrint, setIsPrepPrint] = useState(false);
 
   // CSV column mapping state
   const [csvParsedData, setCsvParsedData] = useState(null);
@@ -309,6 +327,7 @@ function App() {
   const fileInputRef = useRef(null);
   const entriesSectionRef = useRef(null);
   const previewContainerRef = useRef(null);
+  const generationAbortRef = useRef(null);
 
   // Hide "settings restored" after 3s
   useEffect(() => {
@@ -352,12 +371,18 @@ function App() {
   }, [useCustomSize, customWidth, customHeight, customColumns, labelSize]);
 
   // ============================================
-  // BARCODE GENERATION (batched for performance)
+  // BARCODE GENERATION (progressive + cached)
   // ============================================
 
   const generateBarcode = useCallback(() => {
+    // Abort any in-progress generation
+    if (generationAbortRef.current) {
+      generationAbortRef.current.aborted = true;
+    }
+
     if (barcodeEntries.length === 0) {
       setBarcodes([]);
+      setGenerationProgress(null);
       return;
     }
 
@@ -370,25 +395,52 @@ function App() {
       labelHeight = LABEL_SIZES[labelSize].height;
     }
 
-    // Generate all barcodes (async for QR support)
-    const generateAll = async () => {
-      const BATCH_SIZE = 50;
-      const results = [];
+    const abortToken = { aborted: false };
+    generationAbortRef.current = abortToken;
 
-      for (let i = 0; i < barcodeEntries.length; i += BATCH_SIZE) {
-        const batch = barcodeEntries.slice(i, i + BATCH_SIZE);
-        const batchResults = await Promise.all(
-          batch.map(async (entry) => {
-            const image = await generateBarcodeImage(entry.data, labelWidth, labelHeight, barcodeType);
-            return { image, data: entry.data, text: entry.text };
-          })
-        );
-        results.push(...batchResults);
+    // Progressive generation — yield to UI every batch
+    const generateProgressively = async () => {
+      const BATCH_SIZE = 100;
+      const total = barcodeEntries.length;
+      const results = new Array(total);
+
+      setGenerationProgress(0);
+
+      for (let i = 0; i < total; i += BATCH_SIZE) {
+        if (abortToken.aborted) return;
+
+        const end = Math.min(i + BATCH_SIZE, total);
+        const batchPromises = [];
+        for (let j = i; j < end; j++) {
+          batchPromises.push(
+            getCachedBarcodeImage(barcodeEntries[j].data, labelWidth, labelHeight, barcodeType)
+              .then(image => {
+                results[j] = { image, data: barcodeEntries[j].data, text: barcodeEntries[j].text };
+              })
+          );
+        }
+        await Promise.all(batchPromises);
+
+        if (abortToken.aborted) return;
+
+        // Progressive update — show what we have so far
+        const partial = results.slice(0, end).filter(Boolean);
+        setBarcodes([...partial]);
+        setGenerationProgress(Math.round((end / total) * 100));
+
+        // Yield to UI thread
+        if (i + BATCH_SIZE < total) {
+          await yieldToUI();
+        }
       }
-      setBarcodes(results);
+
+      if (!abortToken.aborted) {
+        setBarcodes(results.filter(Boolean));
+        setGenerationProgress(null);
+      }
     };
 
-    generateAll();
+    generateProgressively();
   }, [barcodeEntries, labelSize, useCustomSize, customWidth, customHeight, barcodeType]);
 
   useEffect(() => {
@@ -523,6 +575,7 @@ function App() {
     setRangeEnd('');
     setBarcodeEntries([]);
     setBarcodes([]);
+    barcodeCache.clear();
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
@@ -601,6 +654,8 @@ function App() {
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
+    onBeforeprint: () => setIsPrepPrint(true),
+    onAfterPrint: () => setIsPrepPrint(false),
     pageStyle: `
       @page {
         size: ${dims.pageWidth}mm ${dims.pageHeight}mm;
@@ -624,8 +679,15 @@ function App() {
   });
 
   // ============================================
-  // PREVIEW (real-world size)
+  // PREVIEW (stable rendering with content-visibility)
   // ============================================
+
+  const previewScale = useMemo(() => {
+    const { labelWidth, columns } = getPageAndLabelDimensions();
+    const totalPx = labelWidth * columns * MM_TO_PX;
+    const container = 700; // approx max container width in px
+    return Math.min(1, container / totalPx);
+  }, [getPageAndLabelDimensions]);
 
   const renderPreviewItems = useCallback(() => {
     const { labelWidth, labelHeight, columns } = getPageAndLabelDimensions();
@@ -636,7 +698,15 @@ function App() {
     const pxH = labelHeight * MM_TO_PX;
 
     return Array.from({ length: rows }).map((_, rowIndex) => (
-      <div key={rowIndex} style={{ display: 'flex' }}>
+      <div
+        key={rowIndex}
+        className="preview-row"
+        style={{
+          display: 'flex',
+          contentVisibility: 'auto',
+          containIntrinsicHeight: `${pxH}px`,
+        }}
+      >
         {barcodes.slice(rowIndex * columns, (rowIndex + 1) * columns).map((barcode, index) => (
           <div
             key={index}
@@ -652,6 +722,7 @@ function App() {
               <img
                 src={barcode.image}
                 alt={`Barcode ${rowIndex * columns + index + 1}`}
+                loading="lazy"
                 style={{ maxWidth: '100%', maxHeight: '85%', objectFit: 'contain' }}
               />
             )}
@@ -663,14 +734,6 @@ function App() {
       </div>
     ));
   }, [barcodes, getPageAndLabelDimensions, showExtraInfo]);
-
-  // Compute preview scale so it fits in the container
-  const previewScale = useMemo(() => {
-    const { labelWidth, columns } = getPageAndLabelDimensions();
-    const totalPx = labelWidth * columns * MM_TO_PX;
-    const container = 700; // approx max container width in px
-    return Math.min(1, container / totalPx);
-  }, [getPageAndLabelDimensions]);
 
   // ============================================
   // DERIVED DATA
@@ -799,18 +862,18 @@ function App() {
                 <section className="card sub-card" id="input-range">
                   <button
                     className="sub-section-toggle"
-                    onClick={() => setDataSubSection(dataSubSection === 'range' ? '' : 'range')}
+                    onClick={() => setDataSubSection(dataSubSection === 'batch' ? '' : 'batch')}
                   >
                     <span className="sub-section-toggle-label"><FaRuler /> Batch Range</span>
-                    {dataSubSection === 'range' ? <FaChevronDown className="chevron" /> : <FaChevronRight className="chevron" />}
+                    {dataSubSection === 'batch' ? <FaChevronDown className="chevron" /> : <FaChevronRight className="chevron" />}
                   </button>
-                  {dataSubSection === 'range' && (
+                  {dataSubSection === 'batch' && (
                     <div className="sub-section-body">
                       <div className="form-group">
                         <input
                           className="form-input"
                           type="text"
-                          placeholder="Prefix (optional)"
+                          placeholder="Prefix (optional, e.g. ITEM)"
                           value={prefix}
                           onChange={e => setPrefix(e.target.value)}
                           id="range-prefix-input"
@@ -834,14 +897,14 @@ function App() {
                           id="range-end-input"
                         />
                       </div>
-                      <button className="btn btn-primary btn-block" onClick={generateBarcodeRange} style={{ marginTop: 10 }} id="generate-range-btn">
-                        Generate Range
+                      <button className="btn btn-primary btn-block" onClick={generateBarcodeRange} id="generate-range-btn">
+                        <FaPlus /> Generate Range
                       </button>
                     </div>
                   )}
                 </section>
 
-                {/* Sub-section: CSV */}
+                {/* Sub-section: CSV Import */}
                 <section className="card sub-card" id="input-csv">
                   <button
                     className="sub-section-toggle"
@@ -852,14 +915,18 @@ function App() {
                   </button>
                   {dataSubSection === 'csv' && (
                     <div className="sub-section-body">
-                      <div className="file-upload-area">
-                        <input type="file" accept=".csv" onChange={handleFileUpload} ref={fileInputRef} id="csv-file-input" />
-                        <div className="file-upload-icon">📄</div>
-                        <div className="file-upload-text">
-                          <strong>Click to upload</strong> or drag a CSV file<br />
-                          You'll map columns after upload
-                        </div>
-                      </div>
+                      <label className="csv-upload-area" htmlFor="csv-file-input">
+                        <FaUpload className="csv-upload-icon" />
+                        <span>Click to upload CSV</span>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".csv,.txt"
+                          onChange={handleFileUpload}
+                          id="csv-file-input"
+                          className="csv-file-hidden"
+                        />
+                      </label>
                     </div>
                   )}
                 </section>
@@ -869,7 +936,7 @@ function App() {
             {/* ===== LAYOUT TAB ===== */}
             {activeTab === 'layout' && (
               <div className="tab-panel">
-                {/* Barcode Type Selector */}
+                {/* Barcode Type */}
                 <section className="card" id="barcode-type-card">
                   <h3 className="card-title"><span className="icon"><FaBarcode /></span> Barcode Type</h3>
                   <div className="barcode-type-grid">
@@ -880,80 +947,62 @@ function App() {
                         onClick={() => setBarcodeType(bt.id)}
                         id={`barcode-type-${bt.id}`}
                       >
-                        <div className="barcode-type-icon">
-                          {bt.isQR ? (
-                            <FaQrcode className="qr-icon" />
-                          ) : (
-                            <span className="barcode-type-bars">{bt.icon}</span>
-                          )}
-                        </div>
-                        <div className="barcode-type-name">{bt.name}</div>
-                        <div className="barcode-type-desc">{bt.desc}</div>
+                        {bt.isQR ? (
+                          <FaQrcode className="barcode-type-icon-qr" />
+                        ) : (
+                          <span className="barcode-type-icon">{bt.icon}</span>
+                        )}
+                        <span className="barcode-type-name">{bt.name}</span>
+                        <span className="barcode-type-desc">{bt.desc}</span>
+                        {barcodeType === bt.id && <span className="barcode-type-check">✓</span>}
                       </button>
                     ))}
                   </div>
                 </section>
 
-                <section className="card" id="layout-card">
-                  <h3 className="card-title"><span className="icon"><FaSlidersH /></span> Label Size</h3>
+                {/* Label Size */}
+                <section className="card" id="label-size-card">
+                  <h3 className="card-title"><span className="icon"><FaRuler /></span> Label Size</h3>
 
-                  {showSettingsRestored && (
-                    <div className="settings-restored">✓ Settings restored from last session</div>
-                  )}
-
-                  <div className="toggle-row">
-                    <label className="toggle-label" htmlFor="toggle-custom-size">Custom label size</label>
-                    <input type="checkbox" className="toggle-switch" checked={useCustomSize} onChange={e => setUseCustomSize(e.target.checked)} id="toggle-custom-size" />
+                  <div className="toggle-row" style={{ marginBottom: 10 }}>
+                    <label className="toggle-label" htmlFor="custom-size-toggle">Custom label size</label>
+                    <input type="checkbox" className="toggle-switch" checked={useCustomSize} onChange={e => setUseCustomSize(e.target.checked)} id="custom-size-toggle" />
                   </div>
 
                   {useCustomSize ? (
-                    <div className="form-row-3" style={{ marginTop: 12 }}>
-                      <div>
-                        <label className="form-label">Width (mm)</label>
-                        <input className="form-input" type="number" placeholder="mm" value={customWidth} onChange={e => setCustomWidth(e.target.value)} id="custom-width-input" />
+                    <div className="custom-size-form">
+                      <div className="form-group">
+                        <label className="form-label">Page width (mm)</label>
+                        <input className="form-input" type="number" value={customWidth} onChange={e => setCustomWidth(e.target.value)} id="custom-width" />
                       </div>
-                      <div>
-                        <label className="form-label">Height (mm)</label>
-                        <input className="form-input" type="number" placeholder="mm" value={customHeight} onChange={e => setCustomHeight(e.target.value)} id="custom-height-input" />
+                      <div className="form-group">
+                        <label className="form-label">Page height (mm)</label>
+                        <input className="form-input" type="number" value={customHeight} onChange={e => setCustomHeight(e.target.value)} id="custom-height" />
                       </div>
-                      <div>
+                      <div className="form-group">
                         <label className="form-label">Columns</label>
-                        <input className="form-input" type="number" placeholder="#" value={customColumns} onChange={e => setCustomColumns(e.target.value)} id="custom-columns-input" />
+                        <input className="form-input" type="number" min={1} value={customColumns} onChange={e => setCustomColumns(e.target.value)} id="custom-columns" />
                       </div>
                     </div>
                   ) : (
-                    <div style={{ marginTop: 12 }}>
-                      <label className="form-label">Label Size Preset</label>
-                      <div className="label-size-grid">
-                        {Object.entries(LABEL_SIZES).map(([key, val]) => {
-                          const cols = val.columns;
-                          const aspectW = val.width;
-                          const aspectH = val.height;
-                          const previewW = 70;
-                          const previewH = Math.max(18, Math.round(previewW * (aspectH / aspectW)));
-                          return (
-                            <button
-                              key={key}
-                              className={`label-size-card ${labelSize === key ? 'label-size-card-active' : ''}`}
-                              onClick={() => setLabelSize(key)}
-                              id={`label-size-${key}`}
-                            >
-                              <div className="label-size-mini-preview" style={{ width: previewW, height: previewH }}>
-                                {Array.from({ length: cols }).map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className="label-size-mini-cell"
-                                    style={{ width: `${100 / cols}%`, height: '100%' }}
-                                  />
-                                ))}
-                              </div>
-                              <div className="label-size-card-label">{val.width}×{val.height}mm</div>
-                              <div className="label-size-card-dims">{val.columns} {val.columns === 1 ? 'column' : 'columns'}</div>
-                            </button>
-                          );
-                        })}
+                    <>
+                      <div className="label-preset-heading">Label Size Preset</div>
+                      <div className="label-preset-grid">
+                        {Object.entries(LABEL_SIZES).map(([key, sizeInfo]) => (
+                          <button
+                            key={key}
+                            className={`label-size-card ${labelSize === key && !useCustomSize ? 'label-size-card-active' : ''}`}
+                            onClick={() => { setLabelSize(key); setUseCustomSize(false); }}
+                            id={`label-size-${key}`}
+                          >
+                            <LabelMiniPreview columns={sizeInfo.columns} />
+                            <span className="label-size-name">{sizeInfo.width}×{sizeInfo.height}mm</span>
+                            <span className="label-size-desc">{sizeInfo.label}</span>
+                            {labelSize === key && !useCustomSize && <span className="barcode-type-check">✓</span>}
+                          </button>
+                        ))}
                       </div>
-                    </div>
+                    </>
                   )}
                 </section>
 
@@ -984,33 +1033,12 @@ function App() {
                         <FaTrashAlt /> Delete All
                       </button>
                     </div>
-                    <div className="entries-card-list">
-                      {barcodeEntries.map((entry, index) => (
-                        <div key={index} className={`entry-card ${index === lastAddedIndex ? 'entry-card-new' : ''}`}>
-                          <div className="entry-card-index">{index + 1}</div>
-                          <div className="entry-card-body">
-                            <input
-                              className="entry-card-input"
-                              type="text"
-                              value={entry.data}
-                              onChange={e => updateBarcodeEntry(index, 'data', e.target.value)}
-                              aria-label={`Barcode data for entry ${index + 1}`}
-                            />
-                            <input
-                              className="entry-card-input-label"
-                              type="text"
-                              value={entry.text || ''}
-                              placeholder="Label text…"
-                              onChange={e => updateBarcodeEntry(index, 'text', e.target.value)}
-                              aria-label={`Label text for entry ${index + 1}`}
-                            />
-                          </div>
-                          <button className="entry-card-delete" onClick={() => deleteBarcodeEntry(index)} aria-label="Delete entry">
-                            <FaTimes />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                    <VirtualizedEntryCardList
+                      entries={barcodeEntries}
+                      lastAddedIndex={lastAddedIndex}
+                      onUpdate={updateBarcodeEntry}
+                      onDelete={deleteBarcodeEntry}
+                    />
                   </>
                 )}
               </div>
@@ -1036,10 +1064,22 @@ function App() {
               <div className="preview-header">
                 <h2 className="preview-title">
                   <FaEye /> Preview
-                  <span className="preview-badge">{barcodes.length} barcode{barcodes.length !== 1 ? 's' : ''}</span>
+                  <span className="preview-badge">
+                    {generationProgress !== null
+                      ? `Generating… ${generationProgress}%`
+                      : `${barcodes.length} barcode${barcodes.length !== 1 ? 's' : ''}`
+                    }
+                  </span>
                 </h2>
                 <div className="page-size-info">{pageSizeText}</div>
               </div>
+
+              {/* Progress bar during generation */}
+              {generationProgress !== null && (
+                <div className="generation-progress-bar">
+                  <div className="generation-progress-fill" style={{ width: `${generationProgress}%` }} />
+                </div>
+              )}
 
               <div className="preview-center-wrap">
                 <div
@@ -1048,7 +1088,6 @@ function App() {
                   style={{
                     transform: `scale(${previewScale})`,
                     transformOrigin: 'top center',
-                    width: `${100 / previewScale}%`,
                   }}
                 >
                   {renderPreviewItems()}
@@ -1132,7 +1171,7 @@ function App() {
       </footer>
 
       {/* Hidden print content */}
-      <div style={{ display: 'none' }}>
+      <div className="print-only-container">
         <div ref={printRef} className="print-wrapper">
           {renderPrintItems()}
         </div>
